@@ -4,3 +4,4 @@ https://lactualite.com/politique/montreal-pourrait-avoir-une-nouvelle-mairesse-e
 
 https://www.lapresse.ca/actualites/elections-municipales/2025-10-28/elections-a-montreal/de-nouveaux-partis-politiques-allergiques-a-la-partisanerie.php
 
+https://www.qc125.ca/p/pallas-data-martinez-ferrada-creuse
