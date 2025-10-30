@@ -196,7 +196,9 @@ p_combined <- ggplot(polls_viz, aes(x = date_fin, y = vote_pct, color = candidat
     size = 3.5,
     fontface = "bold",
     color = "grey30",
-    lineheight = 0.9
+    lineheight = 0.9,
+    angle = 90,
+    hjust = 1
   ) +
   # Apply color scales (map candidate_label to candidat colors)
   scale_color_manual(
