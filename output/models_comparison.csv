@@ -1,0 +1,5 @@
+rank,model,mape_global,mae_global
+1,bayesian,17.17,0.0256
+2,multiplicative,19.06,0.0301
+3,baseline,19.2,0.0289
+4,delta,19.53,0.0267
