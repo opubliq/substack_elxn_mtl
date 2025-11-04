@@ -291,6 +291,132 @@ couleurs_candidats <- c(
   "kacou" = "#9B59B6"              # Violet
 )
 
+##############################################################
+## GRAPHIQUES 0: SAILLANCE GÉNÉRALE DE L'ÉLECTION MUNICIPALE ##
+##############################################################
+
+print("Création des graphiques de saillance générale de l'élection...")
+
+# Calculer la saillance totale de l'élection par jour et par région
+df_election_saillance <- df_extraits %>%
+  mutate(date = as.Date(headline_start)) %>%
+  group_by(region, date) %>%
+  summarise(
+    n_articles = n(),
+    saillance_totale = sum(headline_minutes * n()),
+    .groups = "drop"
+  )
+
+## GRAPHIQUE 0A: Saillance élection - Francophones ##
+df_election_fr <- df_election_saillance %>%
+  filter(region == "MTL_QC")
+
+p0a <- ggplot(df_election_fr, aes(x = date, y = saillance_totale)) +
+  geom_line(size = 1.5, color = "#2C3E50") +
+  geom_point(size = 3.5, color = "#2C3E50") +
+  geom_area(alpha = 0.3, fill = "#3498DB") +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  labs(
+    title = "Saillance de l'élection municipale - Médias francophones",
+    subtitle = "Intensité totale de la couverture médiatique",
+    x = "",
+    y = "Indice de saillance totale",
+    caption = "Source: La Presse, Le Devoir, JDM, TVA, Radio-Canada (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/saillance_election_francophones.png",
+       p0a, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 0A créé: saillance_election_francophones.png")
+
+## GRAPHIQUE 0B: Saillance élection - Anglophones ##
+df_election_en <- df_election_saillance %>%
+  filter(region == "MTL_EN")
+
+p0b <- ggplot(df_election_en, aes(x = date, y = saillance_totale)) +
+  geom_line(size = 1.5, color = "#2C3E50") +
+  geom_point(size = 3.5, color = "#2C3E50") +
+  geom_area(alpha = 0.3, fill = "#E74C3C") +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  labs(
+    title = "Saillance de l'élection municipale - Médias anglophones",
+    subtitle = "Intensité totale de la couverture médiatique",
+    x = "",
+    y = "Indice de saillance totale",
+    caption = "Source: Montreal Gazette, CBC Montreal, CTV Montreal (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/saillance_election_anglophones.png",
+       p0b, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 0B créé: saillance_election_anglophones.png")
+
+## GRAPHIQUE 0C: Saillance élection - Tous médias ##
+df_election_all <- df_election_saillance %>%
+  group_by(date) %>%
+  summarise(
+    n_articles = sum(n_articles),
+    saillance_totale = sum(saillance_totale),
+    .groups = "drop"
+  )
+
+p0c <- ggplot(df_election_all, aes(x = date, y = saillance_totale)) +
+  geom_line(size = 1.5, color = "#2C3E50") +
+  geom_point(size = 3.5, color = "#2C3E50") +
+  geom_area(alpha = 0.3, fill = "#27AE60") +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  labs(
+    title = "Saillance de l'élection municipale - Tous les médias montréalais",
+    subtitle = "Intensité totale de la couverture médiatique",
+    x = "",
+    y = "Indice de saillance totale",
+    caption = "Source: Tous les médias montréalais (francophones et anglophones, 10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/saillance_election_tous_medias.png",
+       p0c, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 0C créé: saillance_election_tous_medias.png")
+
+# Sauvegarder les données de saillance générale
+saveRDS(df_election_saillance, "/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/data/processed/saillance_election_generale.rds")
+
+##############################################################
+## GRAPHIQUES 1: CANDIDATS - INDICE ABSOLU ##
+##############################################################
+
+print("Création des graphiques de candidats (indice absolu)...")
+
 # Palette de couleurs pour les enjeux
 couleurs_enjeux <- c(
   "Coût des loyers / Accès à la propriété" = "#E74C3C",
@@ -590,6 +716,289 @@ ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn
        p2c, width = 16, height = 9, dpi = 300)
 print("✓ Graphique 2C créé: enjeux_tous_medias.png")
 
+##############################################################
+## GRAPHIQUES 3: CANDIDATS - INDICE RELATIF (%) ##
+##############################################################
+
+print("Création des graphiques de candidats (indice relatif)...")
+
+## GRAPHIQUE 3A: Candidats RELATIF - Francophones ##
+df_candidats_fr_rel <- df_candidats_long %>%
+  filter(region == "MTL_QC",
+         candidats_mentionnes %in% candidats_principaux) %>%
+  group_by(date, candidats_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p3a <- ggplot(df_candidats_fr_rel, aes(x = date, y = indice_relatif,
+                                   color = candidats_mentionnes,
+                                   group = candidats_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_candidats,
+    labels = c("Martinez Ferrada", "Rabouin", "Sauvé", "Thibodeau", "Kacou"),
+    name = "Candidat"
+  ) +
+  labs(
+    title = "Part de voix médiatique des candidats - Médias francophones",
+    subtitle = "Élection municipale de Montréal 2025 (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: La Presse, Le Devoir, JDM, TVA, Radio-Canada (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 12),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/candidats_francophones_relatif.png",
+       p3a, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 3A créé: candidats_francophones_relatif.png")
+
+## GRAPHIQUE 3B: Candidats RELATIF - Anglophones ##
+df_candidats_en_rel <- df_candidats_long %>%
+  filter(region == "MTL_EN",
+         candidats_mentionnes %in% candidats_principaux) %>%
+  group_by(date, candidats_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p3b <- ggplot(df_candidats_en_rel, aes(x = date, y = indice_relatif,
+                                   color = candidats_mentionnes,
+                                   group = candidats_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_candidats,
+    labels = c("Martinez Ferrada", "Rabouin", "Sauvé", "Thibodeau", "Kacou"),
+    name = "Candidat"
+  ) +
+  labs(
+    title = "Part de voix médiatique des candidats - Médias anglophones",
+    subtitle = "Élection municipale de Montréal 2025 (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: Montreal Gazette, CBC Montreal, CTV Montreal (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 12),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/candidats_anglophones_relatif.png",
+       p3b, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 3B créé: candidats_anglophones_relatif.png")
+
+## GRAPHIQUE 3C: Candidats RELATIF - Tous médias ##
+df_candidats_all_rel <- df_candidats_long %>%
+  filter(candidats_mentionnes %in% candidats_principaux) %>%
+  group_by(date, candidats_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p3c <- ggplot(df_candidats_all_rel, aes(x = date, y = indice_relatif,
+                                   color = candidats_mentionnes,
+                                   group = candidats_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_candidats,
+    labels = c("Martinez Ferrada", "Rabouin", "Sauvé", "Thibodeau", "Kacou"),
+    name = "Candidat"
+  ) +
+  labs(
+    title = "Part de voix médiatique des candidats - Tous les médias montréalais",
+    subtitle = "Élection municipale de Montréal 2025 (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: Tous les médias montréalais (francophones et anglophones, 10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 12),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/candidats_tous_medias_relatif.png",
+       p3c, width = 14, height = 9, dpi = 300)
+print("✓ Graphique 3C créé: candidats_tous_medias_relatif.png")
+
+##############################################################
+## GRAPHIQUES 4: ENJEUX - INDICE RELATIF (%) ##
+##############################################################
+
+print("Création des graphiques d'enjeux (indice relatif)...")
+
+## GRAPHIQUE 4A: Enjeux RELATIF - Francophones ##
+df_enjeux_fr_rel <- df_enjeux_long %>%
+  filter(region == "MTL_QC",
+         enjeux_mentionnes %in% top_enjeux) %>%
+  group_by(date, enjeux_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p4a <- ggplot(df_enjeux_fr_rel, aes(x = date, y = indice_relatif,
+                                color = enjeux_mentionnes,
+                                group = enjeux_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_enjeux,
+    name = "Enjeu électoral"
+  ) +
+  labs(
+    title = "Part de la couverture des enjeux - Médias francophones",
+    subtitle = "Élection municipale de Montréal 2025 - Top 8 des enjeux (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: La Presse, Le Devoir, JDM, TVA, Radio-Canada (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 11),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    legend.key.height = unit(1.2, "lines")
+  ) +
+  guides(color = guide_legend(ncol = 1))
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/enjeux_francophones_relatif.png",
+       p4a, width = 16, height = 9, dpi = 300)
+print("✓ Graphique 4A créé: enjeux_francophones_relatif.png")
+
+## GRAPHIQUE 4B: Enjeux RELATIF - Anglophones ##
+df_enjeux_en_rel <- df_enjeux_long %>%
+  filter(region == "MTL_EN",
+         enjeux_mentionnes %in% top_enjeux) %>%
+  group_by(date, enjeux_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p4b <- ggplot(df_enjeux_en_rel, aes(x = date, y = indice_relatif,
+                                color = enjeux_mentionnes,
+                                group = enjeux_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_enjeux,
+    name = "Enjeu électoral"
+  ) +
+  labs(
+    title = "Part de la couverture des enjeux - Médias anglophones",
+    subtitle = "Élection municipale de Montréal 2025 - Top 8 des enjeux (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: Montreal Gazette, CBC Montreal, CTV Montreal (10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 11),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    legend.key.height = unit(1.2, "lines")
+  ) +
+  guides(color = guide_legend(ncol = 1))
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/enjeux_anglophones_relatif.png",
+       p4b, width = 16, height = 9, dpi = 300)
+print("✓ Graphique 4B créé: enjeux_anglophones_relatif.png")
+
+## GRAPHIQUE 4C: Enjeux RELATIF - Tous médias ##
+df_enjeux_all_rel <- df_enjeux_long %>%
+  filter(enjeux_mentionnes %in% top_enjeux) %>%
+  group_by(date, enjeux_mentionnes) %>%
+  summarise(indice_relatif = sum(indice_relatif), .groups = "drop")
+
+p4c <- ggplot(df_enjeux_all_rel, aes(x = date, y = indice_relatif,
+                                color = enjeux_mentionnes,
+                                group = enjeux_mentionnes)) +
+  geom_line(size = 1.5, alpha = 0.8) +
+  geom_point(size = 3.5) +
+  scale_x_date(date_breaks = "1 week", date_labels = "%d %b") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_color_manual(
+    values = couleurs_enjeux,
+    name = "Enjeu électoral"
+  ) +
+  labs(
+    title = "Part de la couverture des enjeux - Tous les médias montréalais",
+    subtitle = "Élection municipale de Montréal 2025 - Top 8 des enjeux (indice relatif)",
+    x = "",
+    y = "Part de la couverture médiatique (%)",
+    caption = "Source: Tous les médias montréalais (francophones et anglophones, 10 sept - 3 nov 2025)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 14),
+    legend.text = element_text(size = 11),
+    axis.title.y = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 13, color = "gray30"),
+    plot.caption = element_text(size = 10, color = "gray50", hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90"),
+    legend.key.height = unit(1.2, "lines")
+  ) +
+  guides(color = guide_legend(ncol = 1))
+
+ggsave("/Users/adrien/Library/CloudStorage/Dropbox/travail/opubliq/substack_elxn_mtl/output/figures/enjeux_tous_medias_relatif.png",
+       p4c, width = 16, height = 9, dpi = 300)
+print("✓ Graphique 4C créé: enjeux_tous_medias_relatif.png")
+
 ################### Section 5 ############################
 ############## Tableaux récapitulatifs #############
 
@@ -707,20 +1116,36 @@ print("============================================================")
 print("ANALYSE TERMINÉE!")
 print("============================================================")
 print("")
-print("📊 GRAPHIQUES CRÉÉS (6 au total):")
+print("📊 GRAPHIQUES CRÉÉS (15 au total):")
 print("")
-print("  CANDIDATS:")
+print("  0. SAILLANCE GÉNÉRALE DE L'ÉLECTION:")
+print("    ✓ saillance_election_francophones.png")
+print("    ✓ saillance_election_anglophones.png")
+print("    ✓ saillance_election_tous_medias.png")
+print("")
+print("  1. CANDIDATS (indice absolu):")
 print("    ✓ candidats_francophones.png")
 print("    ✓ candidats_anglophones.png")
 print("    ✓ candidats_tous_medias.png")
 print("")
-print("  ENJEUX:")
+print("  2. ENJEUX (indice absolu):")
 print("    ✓ enjeux_francophones.png")
 print("    ✓ enjeux_anglophones.png")
 print("    ✓ enjeux_tous_medias.png")
 print("")
+print("  3. CANDIDATS (indice relatif %):")
+print("    ✓ candidats_francophones_relatif.png")
+print("    ✓ candidats_anglophones_relatif.png")
+print("    ✓ candidats_tous_medias_relatif.png")
+print("")
+print("  4. ENJEUX (indice relatif %):")
+print("    ✓ enjeux_francophones_relatif.png")
+print("    ✓ enjeux_anglophones_relatif.png")
+print("    ✓ enjeux_tous_medias_relatif.png")
+print("")
 print("💾 DONNÉES SAUVEGARDÉES:")
 print("  - candidats_enjeux_extraction.rds (extraction complète)")
+print("  - saillance_election_generale.rds")
 print("  - saillance_candidats.rds")
 print("  - saillance_enjeux.rds")
 print("")

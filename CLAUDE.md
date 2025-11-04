@@ -75,9 +75,14 @@ Current timeline: **5 days before election** (as of October 29, 2025)
 - `doc/revue_litt_elicit.pdf` - Literature review on forecasting methodologies
 
 ### Media Sources (see contexte_medias.md)
-- Radio-Canada (polling coverage)
-- L'actualité (political analysis)
-- La Presse (party dynamics)
+**Francophones**: La Presse, Le Devoir, JDM, TVA Nouvelles, Radio-Canada
+**Anglophones**: Montreal Gazette, CBC Montreal, CTV Montreal
+
+### Media Data Collection (via Ellipse)
+- **Source**: AWS data warehouse via `ellipse_query(con, "r-media-headlines")`
+- **Period**: September 10 - November 3, 2025 (election campaign)
+- **Collection frequency**: Every 10 minutes (high temporal resolution)
+- **Metrics tracked**: headline duration in minutes, article title, body text, extraction timestamps
 
 ## Modeling Approach: Parsimonious Hybrid Forecasting
 
@@ -422,64 +427,199 @@ media_daily %>%
 
 ## Project Structure
 
-Recommended directory structure (R-based):
+**Current directory structure**:
 
 ```
 substack_elxn_mtl/
+├── code/
+│   └── saillance_candidats_mtl.R     # Main analysis script (ALL-IN-ONE)
 ├── data/
-│   ├── raw/
-│   │   ├── media/           # Pre-structured media data (CSV/RDS)
-│   │   ├── polls/           # Léger PDF and parsed CSV
-│   │   └── historical/      # Past election results for validation
 │   ├── processed/
-│   │   ├── media_daily.rds      # Daily aggregated media metrics
-│   │   ├── model_inputs.rds     # Final modeling dataset
-│   │   └── poll_priors.csv      # Poll-based priors
+│   │   ├── candidats_enjeux_extraction.rds    # AI extraction results
+│   │   ├── saillance_election_generale.rds    # General election salience
+│   │   ├── saillance_candidats.rds            # Candidate salience metrics
+│   │   └── saillance_enjeux.rds               # Issue salience metrics
 │   └── outputs/
-│       ├── forecasts/           # Daily forecast archives (RDS)
-│       ├── posteriors/          # Saved MCMC draws
-│       └── validation/          # Cross-validation results
-├── R/
-│   ├── 01_data_prep.R           # Process media & poll data
-│   ├── 02_feature_engineering.R # Calculate momentum, sentiment aggregation
-│   ├── 03_baseline_model.R      # Poll-only baseline
-│   ├── 04_hybrid_model.R        # Main Bayesian model (brms/stan)
-│   ├── 05_diagnostics.R         # MCMC convergence checks
-│   ├── 06_validation.R          # Cross-validation framework
-│   ├── 07_visualization.R       # Forecast plots
-│   └── utils/
-│       ├── model_helpers.R      # Reusable model functions
-│       ├── plot_themes.R        # ggplot2 custom themes
-│       └── metrics.R            # MAPE, calibration functions
-├── analysis/
-│   ├── 01_exploratory_analysis.Rmd
-│   ├── 02_baseline_forecasts.Rmd
-│   ├── 03_hybrid_model_development.Rmd
-│   ├── 04_sensitivity_analysis.Rmd
-│   └── 05_final_forecast_report.Rmd
+│       ├── recap_candidats_par_region.csv     # Candidate summary by media type
+│       ├── recap_candidats_total.csv          # Candidate summary (all media)
+│       ├── recap_enjeux_par_region.csv        # Issue summary by media type
+│       └── recap_enjeux_total.csv             # Issue summary (all media)
 ├── output/
-│   ├── figures/             # Publication-ready plots (PNG/PDF)
-│   ├── tables/              # Model summaries (CSV/LaTeX)
-│   ├── substack/            # Markdown drafts for Substack
-│   └── final_forecast/      # Nov 1 final prediction bundle
-├── stan/                    # Optional: custom Stan models
-│   ├── dirichlet_hybrid.stan
-│   └── multinomial_logit.stan
-├── tests/
-│   └── testthat/
-│       ├── test_data_prep.R
-│       ├── test_model_fitting.R
-│       └── test_metrics.R
-├── doc/                     # Documentation (already exists)
+│   └── figures/                               # 15 publication-ready graphs
+│       ├── saillance_election_francophones.png
+│       ├── saillance_election_anglophones.png
+│       ├── saillance_election_tous_medias.png
+│       ├── candidats_francophones.png
+│       ├── candidats_anglophones.png
+│       ├── candidats_tous_medias.png
+│       ├── enjeux_francophones.png
+│       ├── enjeux_anglophones.png
+│       ├── enjeux_tous_medias.png
+│       ├── candidats_francophones_relatif.png
+│       ├── candidats_anglophones_relatif.png
+│       ├── candidats_tous_medias_relatif.png
+│       ├── enjeux_francophones_relatif.png
+│       ├── enjeux_anglophones_relatif.png
+│       └── enjeux_tous_medias_relatif.png
+├── doc/
 │   ├── CLAUDE.md
 │   ├── contexte_medias.md
 │   ├── Elections-municipales-a-Montreal-PostMedia.pdf
 │   └── revue_litt_elicit.pdf
-├── .Rprofile                # Project-specific R settings
-├── renv.lock                # Dependency management (optional)
-├── substack_elxn_mtl.Rproj  # RStudio project file
 └── README.md
 ```
+
+## Media Salience Analysis Pipeline
+
+### Overview
+The `code/saillance_candidats_mtl.R` script performs a comprehensive AI-powered analysis of media coverage during the Montreal 2025 municipal election campaign.
+
+### Pipeline Architecture
+
+**Step 1: Data Extraction from AWS**
+- Connects to Ellipse data warehouse (`ellipse_connect("PROD")`)
+- Queries `r-media-headlines` table for Sept 10 - Nov 3, 2025
+- Filters for Montreal media (francophones + anglophones)
+- Calculates headline duration metrics (time each article spent in headlines)
+
+**Step 2: Intelligent Article Filtering (via OpenAI GPT-4o-mini)**
+- **Purpose**: Filter only articles about the municipal election
+- **Method**: AI classification (OUI/NON)
+- **Result**: ~33.8% of francophone coverage doesn't mention specific candidates (shows general election coverage)
+
+**Step 3: Dual AI Extraction**
+For each election-related article, two parallel extractions:
+
+1. **Candidate Extraction**
+   - Identifies mentions of 5 main candidates: Martinez Ferrada, Rabouin, Sauvé, Thibodeau, Kacou
+   - Handles name variations (full names, first names, etc.)
+   - Filters out minor candidates (e.g., "Roy", "Katahwa")
+
+2. **Issue Extraction**
+   - Identifies 15 electoral issues based on Léger poll priorities:
+     - Coût des loyers / Accès à la propriété (48% top issue)
+     - Itinérance / Logement social (38%)
+     - Congestion routière / Chantiers (33%)
+     - Transport collectif (27%)
+     - Sécurité / Criminalité (21%)
+     - Taxes (19%)
+     - And 9 others...
+   - Uses strict category matching (prevents AI from creating new categories)
+
+**Step 4: Salience Calculation**
+
+Two complementary metrics:
+
+1. **Absolute Salience Index**
+   ```r
+   indice_absolu = n_mentions × total_minutes_in_headlines
+   ```
+   - Measures raw intensity of coverage
+   - Useful for tracking overall campaign momentum
+
+2. **Relative Salience Index** (%)
+   ```r
+   indice_relatif = indice_absolu / total_absolu_per_day
+   ```
+   - Measures share of voice
+   - Useful for comparing candidates/issues (zero-sum competition)
+
+**Step 5: Visualization Generation (15 graphs)**
+
+Three analysis dimensions:
+- **Media segmentation**: Francophones / Anglophones / All Media
+- **Metric type**: Absolute vs Relative salience
+- **Content type**: Election general / Candidates / Issues
+
+### Key Outputs
+
+**Processed Data Files**:
+- `candidats_enjeux_extraction.rds`: Raw AI extraction results
+- `saillance_election_generale.rds`: Daily election salience totals
+- `saillance_candidats.rds`: Candidate salience by date/region
+- `saillance_enjeux.rds`: Issue salience by date/region
+
+**Summary Tables**:
+- `recap_candidats_par_region.csv`: Candidate rankings by media type
+- `recap_candidats_total.csv`: Overall candidate rankings
+- `recap_enjeux_par_region.csv`: Issue rankings by media type
+- `recap_enjeux_total.csv`: Overall issue rankings
+
+**15 Publication-Ready Graphs**:
+
+*0. Election General Salience (3 graphs)*
+- Shows campaign intensity over time
+- Identifies peak media moments
+- Compares francophone vs anglophone coverage patterns
+
+*1. Candidate Salience - Absolute (3 graphs)*
+- Raw coverage intensity per candidate
+- By media type: franco / anglo / all
+
+*2. Issue Salience - Absolute (3 graphs)*
+- Top 8 issues by coverage volume
+- Shows which issues dominate the campaign
+
+*3. Candidate Salience - Relative (3 graphs)*
+- % share of media voice per candidate
+- Better for comparing candidate visibility
+
+*4. Issue Salience - Relative (3 graphs)*
+- % share of issue coverage
+- Shows relative importance of different issues
+
+### Usage
+
+```r
+# Run complete analysis
+source("code/saillance_candidats_mtl.R")
+
+# The script will:
+# 1. Load data from AWS (requires Ellipse credentials)
+# 2. Run AI extraction via OpenAI API (requires OPENAI_API_KEY)
+# 3. Calculate salience metrics
+# 4. Generate 15 graphs in output/figures/
+# 5. Save summary CSVs in data/outputs/
+# 6. Print execution time and beep when done
+```
+
+### Key Findings from Initial Analysis
+
+**Candidate Salience** (francophones):
+- Martinez Ferrada: 31.0% (highest absolute salience)
+- Rabouin: 25.2%
+- Sauvé: 5.5%
+- Thibodeau: 3.3%
+- Kacou: 0.4%
+
+**Candidate Salience** (anglophones):
+- Martinez Ferrada: 33.1%
+- Rabouin: 24.0%
+- Sauvé: 11.1%
+- Thibodeau: 8.0%
+- Kacou: 5.2%
+
+**Observation**: Anglophone media gives more balanced coverage to minor candidates vs francophones
+
+**"Aucun" Category**: 33.8% (francophones) and 18.4% (anglophones) of articles mention the election but no specific candidate - indicates significant general election coverage without candidate focus.
+
+### Technical Considerations
+
+**AI Prompt Engineering**:
+- System messages emphasize consistency across articles
+- User prompts provide explicit examples and constraints
+- Strict category enforcement for issues (prevents drift)
+
+**Data Quality**:
+- Filters articles with <10 minutes headline duration (noise reduction)
+- Handles missing/malformed timestamps
+- Normalizes candidate names (lowercase, remove punctuation)
+
+**Performance**:
+- Single data load from AWS (efficient)
+- Parallel AI extractions where possible
+- ~1000 articles × 2 prompts = ~2000 API calls
+- Estimated cost: ~$5-10 for full campaign analysis (GPT-4o-mini pricing)
 
 **Key R Project Setup**:
 
@@ -766,3 +906,4 @@ write_rmd(here("output/substack/post_mortem.Rmd"))
 - Correct winner predicted with >50% probability
 - Credible intervals well-calibrated (actual coverage ≈ nominal coverage)
 - Outperform poll-only baseline by ≥2 percentage points
+- memo
